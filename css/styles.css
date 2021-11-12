@@ -121,7 +121,12 @@ p {
 .explorer-link {
   font-size: 1rem;
   color: inherit;
-  text-decoration: none;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+}
+.explorer-link svg {
+  margin-left: 0.5rem;
 }
 
 .gauge {
@@ -273,6 +278,7 @@ p {
 .tabs .tab-controls {
   display: flex;
   margin-bottom: 1rem;
+  margin-left: 0.75rem;
 }
 .tabs .tab-controls a {
   text-decoration: none;
