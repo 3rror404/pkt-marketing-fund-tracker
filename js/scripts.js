@@ -141,7 +141,9 @@ const tabs = document.querySelectorAll('.tabs .tab');
 const tabControls = document.querySelector('.tab-controls');
 
 tabControls.addEventListener('click', function(event) {
-  let target = event.target; // where was the click?
+  event.preventDefault();
+  
+  let target = event.target;
 
   if (target.tagName != 'A') { return }
 
