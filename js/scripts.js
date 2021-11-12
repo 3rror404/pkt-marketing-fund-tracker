@@ -9,7 +9,7 @@
         return `${value.substring(0, startChars)}${seperator}${value.substring(value.length - endChars)}`;
     }
 
-    UTILS.convertToPKT = function (value, format) {
+    UTILS.convertToPKT = function(value, format) {
         if (typeof value !== 'number') { value = parseFloat(value) };
 
         let result = Math.round((value / COIN_DIVISION) * 100) / 100;
@@ -27,7 +27,7 @@
 
     UTILS.getTimeOffsetString = function(txDate) {
         const now = moment().local();
-        txDate = moment(txDate); //.add(1, 'hours');
+        txDate = moment(txDate);
 
         const diffDays = now.diff(txDate, 'days');
         const diffHours = now.diff(txDate, 'hours');
@@ -44,38 +44,63 @@
 }(window.UTILS = window.UTILS || {}));
 
 /**
-* Application
+* Application Start.
+* 
+* TODO: The percentage should be based an cumulative deposit 
+* value, not the current address balance. Otherwise, withdrawls
+* from the address will reducce the percentags.
 */
 
 const TARGET_VALUE = 25000000;
-const ADDRESS = 'pkt1q4fru3euy4g4w53rct6lwpehplrt0lpy2f5l0zc';
-const REFRESH_MS = 60000;
+const ADDRESSES = ['pkt1q4fru3euy4g4w53rct6lwpehplrt0lpy2f5l0zc','pkt1q9cyzc7qy8z98sx6a7qqysztsp4h5js8295ln70']; // Newest => oldest
+const REFRESH_MS = 60000; // How often the transaction data should be reloaded (ms)
 let timer;
 
 document.querySelector('.target').innerHTML = `${UTILS.numberWithCommas(TARGET_VALUE)} PKT`;
-document.querySelector('.contribute-address').innerHTML = `${ADDRESS}`;
+document.querySelector('.contribute-address').innerHTML = `${ADDRESSES[0]}`;
 
 function loadData() {
+  /**
+   * Must initilise array with defined length so that we can insert txns[]
+   * at correct index, maintaining the chronological order.
+   */
+  const transactions = new Array(ADDRESSES.length);
+  let reqCount = 2; 
+
   loadWalletData().then((data) => {
     setGaugeValues(data);
   });
 
-  loadWalletTransactions().then((data) => {
-    buildContributionsList(data.results);
+  for (let i = 0; i < ADDRESSES.length; i++) {
+    loadWalletTransactions(ADDRESSES[i]).then((data) => {
+      transactions[i] = data.results;
+      reqCount--;
+  
+      if (reqCount === 0) { 
+        done();
+      }
+    });
+  }
 
+  function done() {
+    /**
+     * All requests are complete.
+     * It should be safe to flatten the array and continue.
+     */
+    buildContributionsList(transactions.flat());
     document.querySelector('.loadable-content').classList.remove('loading');
 
     if (timer) { clearTimeout(timer) }
     timer = setTimeout(() => {
       loadData();
     }, REFRESH_MS);
-  });
+  }
 }
 
 loadData();
 
 function loadWalletData() {         
-  return fetch(`https://explorer.pkt.cash/api/v1/PKT/pkt/address/${ADDRESS}`)
+  return fetch(`https://explorer.pkt.cash/api/v1/PKT/pkt/address/${ADDRESSES[0]}`)
   .then(response => response.json())
   .then(result => {
     return result;
@@ -83,8 +108,8 @@ function loadWalletData() {
   .catch(error => console.log('error', error));
 }
 
-function loadWalletTransactions() {         
-  return fetch(`https://explorer.pkt.cash/api/v1/PKT/pkt/address/${ADDRESS}/coins/?mining=excluded`)
+function loadWalletTransactions(addressToLoad) {         
+  return fetch(`https://explorer.pkt.cash/api/v1/PKT/pkt/address/${addressToLoad}/coins/?mining=excluded`)
   .then(response => response.json())
   .then(result => {
     return result;
@@ -111,8 +136,8 @@ function setGaugeValues(data) {
 }
 
 function buildContributionsList(txns) {
-  // We are only interested in deposits. Filter out all withdrawls.
-  txns = txns.filter(d => d.input.every(c => c.address !== ADDRESS));
+  // We are only interested in deposits. Filter out all withdrawls & folding.
+  txns = txns.filter(d => d.input.every(c => !ADDRESSES.includes(c.address)));
   
   const output = [`
     <div class="header-bar">
@@ -123,7 +148,7 @@ function buildContributionsList(txns) {
   
   txns.forEach(tx => {
     // Make sure we don't include change in the tx value
-    const outp = tx.output.find(o => o.address === ADDRESS);
+    const outp = tx.output.find(o => ADDRESSES.includes(o.address));
     
     output.push(`
       <div>
@@ -163,7 +188,7 @@ tabControls.addEventListener('click', function(event) {
 
 const clipboardControl = document.querySelector('.clipboard-control');
 clipboardControl.addEventListener('click', () => {
-  copyToClipboard(ADDRESS);
+  copyToClipboard(ADDRESSES[0]);
 
   clipboardControl.classList.add('copied');
 
