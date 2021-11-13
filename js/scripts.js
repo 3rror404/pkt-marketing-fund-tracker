@@ -45,10 +45,6 @@
 
 /**
 * Application Start.
-* 
-* TODO: The percentage should be based an cumulative deposit 
-* value, not the current address balance. Otherwise, withdrawls
-* from the address will reducce the percentags.
 */
 
 const TARGET_VALUE = 25000000;
@@ -65,11 +61,7 @@ function loadData() {
    * at correct index, maintaining the chronological order.
    */
   const transactions = new Array(ADDRESSES.length);
-  let reqCount = 2; 
-
-  loadWalletData().then((data) => {
-    setGaugeValues(data);
-  });
+  let reqCount = ADDRESSES.length;
 
   for (let i = 0; i < ADDRESSES.length; i++) {
     loadWalletTransactions(ADDRESSES[i]).then((data) => {
@@ -87,7 +79,7 @@ function loadData() {
      * All requests are complete.
      * It should be safe to flatten the array and continue.
      */
-    buildContributionsList(transactions.flat());
+    buildUI(transactions.flat());
     document.querySelector('.loadable-content').classList.remove('loading');
 
     if (timer) { clearTimeout(timer) }
@@ -99,15 +91,6 @@ function loadData() {
 
 loadData();
 
-function loadWalletData() {         
-  return fetch(`https://explorer.pkt.cash/api/v1/PKT/pkt/address/${ADDRESSES[0]}`)
-  .then(response => response.json())
-  .then(result => {
-    return result;
-  })
-  .catch(error => console.log('error', error));
-}
-
 function loadWalletTransactions(addressToLoad) {         
   return fetch(`https://explorer.pkt.cash/api/v1/PKT/pkt/address/${addressToLoad}/coins/?mining=excluded`)
   .then(response => response.json())
@@ -117,8 +100,40 @@ function loadWalletTransactions(addressToLoad) {
   .catch(error => console.log('error', error));
 }
 
-function setGaugeValues(data) {
-  const pktBalance = UTILS.convertToPKT(data.balance);
+function buildUI(txns) {
+  // We are only interested in deposits. Filter out all withdrawls & folding.
+  txns = txns.filter(d => d.input.every(c => !ADDRESSES.includes(c.address)));
+
+  let cumulativeTotal = 0;
+  
+  const output = [`
+    <div class="header-bar">
+      <div class="address">Contributor</div>
+      <div>PKT</div>
+    </div>
+  `];
+  
+  txns.forEach(tx => {
+    // Make sure we don't include change in the tx value
+    const outp = tx.output.find(o => ADDRESSES.includes(o.address));
+
+    cumulativeTotal += parseInt(outp.value);
+    
+    output.push(`
+      <div>
+        <div class="address">${UTILS.truncateString(tx.input[0].address, {startChars: 10, endChars: 10})}</div>
+        <div class="value">${UTILS.convertToPKT(outp.value, true)}</div>
+      </div>
+    `);
+    
+  });
+
+  setGaugeValues(cumulativeTotal);
+  document.querySelector('.contributors').innerHTML = output.join('');
+}
+
+function setGaugeValues(cumulativeTotal) {
+  const pktBalance = UTILS.convertToPKT(cumulativeTotal);
   const percentage = Math.round((pktBalance / TARGET_VALUE) * 100);
   
   const gaugeEl = document.querySelector('.gauge');
@@ -133,33 +148,6 @@ function setGaugeValues(data) {
   gaugeEl.style.width = `${percentage}%`;
   gaugeEl.classList.add('animated');
   
-}
-
-function buildContributionsList(txns) {
-  // We are only interested in deposits. Filter out all withdrawls & folding.
-  txns = txns.filter(d => d.input.every(c => !ADDRESSES.includes(c.address)));
-  
-  const output = [`
-    <div class="header-bar">
-      <div class="address">Contributor</div>
-      <div>PKT</div>
-    </div>
-  `];
-  
-  txns.forEach(tx => {
-    // Make sure we don't include change in the tx value
-    const outp = tx.output.find(o => ADDRESSES.includes(o.address));
-    
-    output.push(`
-      <div>
-        <div class="address">${UTILS.truncateString(tx.input[0].address, {startChars: 10, endChars: 10})}</div>
-        <div class="value">${UTILS.convertToPKT(outp.value, true)}</div>
-      </div>
-    `);
-    
-  });
-
-  document.querySelector('.contributors').innerHTML = output.join('');
 }
 
 const tabs = document.querySelectorAll('.tabs .tab');
@@ -194,7 +182,7 @@ clipboardControl.addEventListener('click', () => {
 
   setTimeout(() => {
     clipboardControl.classList.remove('copied');
-  }, 3000);
+  }, 1500);
 });
 
 function copyToClipboard(text) {
