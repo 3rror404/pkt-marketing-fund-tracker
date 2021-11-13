@@ -52,6 +52,19 @@ const ADDRESSES = ['pkt1q4fru3euy4g4w53rct6lwpehplrt0lpy2f5l0zc','pkt1q9cyzc7qy8
 const REFRESH_MS = 60000; // How often the transaction data should be reloaded (ms)
 let timer;
 
+const users = [
+  {
+    address: 'pkt1qgjtzma5380t4470v56fqg35sum0qxw8p99rt9j',
+    name: 'User012345',
+    image: 'dummy.png'
+  },
+  {
+    address: 'pkt1qxtrtte3qnql6v8u9s0xq8swtwwwmcjc5l28nmh',
+    name: 'AaaaBbbb',
+    initials: "AB"
+  }
+];
+
 document.querySelector('.target').innerHTML = `${UTILS.numberWithCommas(TARGET_VALUE)} PKT`;
 document.querySelector('.contribute-address').innerHTML = `${ADDRESSES[0]}`;
 
@@ -110,6 +123,7 @@ function buildUI(txns) {
     <div class="header-bar">
       <div class="address">Contributor</div>
       <div>PKT</div>
+      <div></div>
     </div>
   `];
   
@@ -118,10 +132,12 @@ function buildUI(txns) {
     const outp = tx.output.find(o => ADDRESSES.includes(o.address));
 
     cumulativeTotal += parseInt(outp.value);
+
+    const knownUser = users.find(u => u.address === tx.input[0].address);
     
     output.push(`
       <div>
-        <div class="address">${UTILS.truncateString(tx.input[0].address, {startChars: 10, endChars: 10})}</div>
+        ${knownUser ? `${buildUser(knownUser)}` : `<div class="address">${UTILS.truncateString(tx.input[0].address, {startChars: 10, endChars: 10})}</div>`}       
         <div class="value">${UTILS.convertToPKT(outp.value, true)}</div>
       </div>
     `);
@@ -130,6 +146,15 @@ function buildUI(txns) {
 
   setGaugeValues(cumulativeTotal);
   document.querySelector('.contributors').innerHTML = output.join('');
+}
+
+function buildUser(knownUser) {
+  return `
+    <div class="user">
+      <div class="avatar">${knownUser.image ? `<img src="avatars/${knownUser.image}">` : `<div class="initials">${knownUser.initials}</div>`}</div>
+      <div class="name">${knownUser.name}</div>
+    </div>
+  `;
 }
 
 function setGaugeValues(cumulativeTotal) {

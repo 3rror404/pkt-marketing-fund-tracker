@@ -239,13 +239,42 @@ p {
 }
 .contributors > div {
   display: flex;
+  align-items: center;
   padding: 0.5rem 1rem;
+  min-height: 30px;
 }
 .contributors > div:nth-child(even) {
   background: var(--light-bg-color);
 }
 .contributors .address {
   margin-right: auto;
+}
+.contributors .user {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+}
+.contributors .user .avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 100px;
+  overflow: hidden;
+  margin-right: 0.5rem;
+  background: var(--accent-color);
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.contributors .user .avatar img {
+  display: block;
+  width: 100%;
+}
+.contributors .user .initials {
+  font-size: 0.7em;
+}
+.contributors .user .name {
+  color: var(--brand-mid-color);
 }
 
 .loading-indicator {
