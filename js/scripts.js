@@ -53,15 +53,15 @@ const REFRESH_MS = 60000; // How often the transaction data should be reloaded (
 let timer;
 
 const users = [
+  // {
+  //   address: 'pkt1qgp473lpantkceajm0sflaayfpcd07kh3stnpvt',
+  //   name: 'User012345',
+  //   image: 'dummy.png'
+  // },
   {
-    address: 'pkt1qgjtzma5380t4470v56fqg35sum0qxw8p99rt9j',
-    name: 'User012345',
-    image: 'dummy.png'
-  },
-  {
-    address: 'pkt1qxtrtte3qnql6v8u9s0xq8swtwwwmcjc5l28nmh',
-    name: 'AaaaBbbb',
-    initials: "AB"
+    address: 'pkt1qgp473lpantkceajm0sflaayfpcd07kh3stnpvt',
+    name: 'The Bergers',
+    initials: "B"
   }
 ];
 
