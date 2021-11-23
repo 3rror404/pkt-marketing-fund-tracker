@@ -144,6 +144,7 @@ function buildUI(txns) {
     
   });
 
+  document.querySelector('.raised').innerHTML = `${UTILS.convertToPKT(cumulativeTotal, true)} PKT`;
   setGaugeValues(cumulativeTotal);
   document.querySelector('.contributors').innerHTML = output.join('');
 }
