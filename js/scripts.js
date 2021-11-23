@@ -114,8 +114,8 @@ function loadWalletTransactions(addressToLoad) {
 }
 
 function buildUI(txns) {
-  // We are only interested in deposits. Filter out all withdrawls & folding.
-  txns = txns.filter(d => d.input.every(c => !ADDRESSES.includes(c.address)));
+  // We are only interested in deposits after+including block 1170657. Filter out all withdrawls & folding.
+  txns = txns.filter(t => t.blockHeight >= 1170657 && t.input.every(i => !ADDRESSES.includes(i.address)));
 
   let cumulativeTotal = 0;
   
